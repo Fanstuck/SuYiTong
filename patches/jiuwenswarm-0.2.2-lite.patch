@@ -1,0 +1,222 @@
+diff --git a/jiuwenswarm/gateway/app_gateway.py b/jiuwenswarm/gateway/app_gateway.py
+index abe3bc9..daf8c4a 100644
+--- a/jiuwenswarm/gateway/app_gateway.py
++++ b/jiuwenswarm/gateway/app_gateway.py
+@@ -778,27 +778,52 @@ def _build_route_config_map(bindings: list[GatewayRouteBinding]) -> dict[str, Ro
+ 
+ 
+ async def _run(
+-        agent_server_url: str,
+-        web_host: str,
+-        web_port: int,
+-        web_path: str,
++    agent_server_url: str,
++    web_host: str,
++    web_port: int,
++    web_path: str,
+ ) -> None:
+     from jiuwenswarm.gateway.channel_manager.protocol.a2a.a2a_connect import A2AChannel, A2AChannelConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.dingtalk.dingtalk_connect import DingTalkChannel, \
+-        DingTalkConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.feishu.feishu_connect import FeishuChannel, FeishuConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.whatsapp.whatsapp_connect import WhatsAppChannel, \
+-        WhatsAppChannelConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.wechat.wechat_connect import WechatChannel, WechatConfig
+     from jiuwenswarm.gateway.channel_manager.web.web_connect import WebChannel, WebChannelConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.xiaoyi.xiaoyi_connect import (
+-        XiaoyiChannel, XiaoyiChannelConfig,
+-    )
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.telegram.telegram_connect import TelegramChannel, \
+-        TelegramChannelConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.discord.discord_connect import DiscordChannel, \
+-        DiscordChannelConfig
+-    from jiuwenswarm.gateway.channel_manager.im_platforms.wecom.wecom_connect import WecomChannel, WecomConfig
++
++    # 速易通只保留本地 Web 入口。避免导入未使用的 IM/手机渠道及其重量级 SDK，
++    # 同时保留上游代码结构，便于后续按需回合并。
++    suiyitong_lite_mode = os.getenv("SUYITONG_LITE_MODE", "0").strip().lower() in {
++        "1", "true", "yes", "on",
++    }
++    if not suiyitong_lite_mode:
++        from jiuwenswarm.gateway.channel_manager.im_platforms.dingtalk.dingtalk_connect import (
++            DingTalkChannel,
++            DingTalkConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.feishu.feishu_connect import (
++            FeishuChannel,
++            FeishuConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.whatsapp.whatsapp_connect import (
++            WhatsAppChannel,
++            WhatsAppChannelConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.wechat.wechat_connect import (
++            WechatChannel,
++            WechatConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.xiaoyi.xiaoyi_connect import (
++            XiaoyiChannel,
++            XiaoyiChannelConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.telegram.telegram_connect import (
++            TelegramChannel,
++            TelegramChannelConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.discord.discord_connect import (
++            DiscordChannel,
++            DiscordChannelConfig,
++        )
++        from jiuwenswarm.gateway.channel_manager.im_platforms.wecom.wecom_connect import (
++            WecomChannel,
++            WecomConfig,
++        )
+     from jiuwenswarm.common.config import get_config
+     from jiuwenswarm.common.cleanup import start_background_cleanup
+     from jiuwenswarm.gateway.routing.agent_client import WebSocketAgentServerClient
+@@ -1244,6 +1269,11 @@ async def _run(
+         nonlocal _last_channels_conf
+         nonlocal feishu_enterprise_channels, feishu_enterprise_tasks
+ 
++        if suiyitong_lite_mode:
++            _last_channels_conf = {}
++            logger.info("[App] SUYITONG_LITE_MODE enabled; external channels are disabled")
++            return
++
+         restart_pending = channel_manager.pop_channel_restart_pending()
+         changed_channels: list[str] = []
+         for channel_name in [
+diff --git a/pyproject.toml b/pyproject.toml
+index 71ec81a..b9e69eb 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -15,7 +15,6 @@ dependencies = [
+     "a2ui-agent-sdk==0.2.1",
+     "chromadb>=1.5.0",
+     "ruamel.yaml>=0.18.0",
+-    "lark-oapi>=1.5.3",
+     "loguru>=0.7.3",
+     "openjiuwen==0.1.15",
+     "pgvector>=0.4.2",
+@@ -23,11 +22,6 @@ dependencies = [
+     "psutil>=7.2.2",
+     "aiosqlite>=0.22.1",
+     "croniter>=2.0.0",
+-    "python-telegram-bot>=20.0",
+-    "discord.py>=2.4.0",
+-    "dingtalk-stream>=0.24.3",
+-    "wecom-aibot-sdk>=1.0.5",
+-    "python-socks>=2.8.1",
+     "greenlet>=3.3.2",
+     "skillnet-ai==0.0.16",
+     "mutagen>=1.47.0",
+
+diff --git a/jiuwenswarm/channels/web/frontend/src/App.tsx b/jiuwenswarm/channels/web/frontend/src/App.tsx
+index e301096..5c87896 100644
+--- a/jiuwenswarm/channels/web/frontend/src/App.tsx
++++ b/jiuwenswarm/channels/web/frontend/src/App.tsx
+@@ -16,7 +16,6 @@ import CronPanel from './components/CronPanel';
+ import { ToolPanel } from './components/ToolPanel';
+ import { ConfigPanel } from './components/ConfigPanel';
+ import { LogsPanel } from './components/LogsPanel';
+-import { ChannelsPanel } from './components/ChannelsPanel';
+ import { BrowserPanel } from './components/BrowserPanel';
+ import { UpdatePanel } from './components/UpdatePanel';
+ import { ExtensionsHubPanel } from './components/ExtensionsHubPanel';
+@@ -55,7 +54,7 @@ import {
+ } from './features/a2ui/actionBridge';
+ import './App.css';
+ 
+-type MainNavKey = 'chat' | 'skills' | 'agents' | 'teams' | 'sessions' | 'heartbeat' | 'cron' | 'channels' | 'extensions' | 'configpanel' | 'logspanel' | 'browserpanel' | 'updatepanel';
++type MainNavKey = 'chat' | 'skills' | 'agents' | 'teams' | 'sessions' | 'heartbeat' | 'cron' | 'extensions' | 'configpanel' | 'logspanel' | 'browserpanel' | 'updatepanel';
+ 
+ type AgentsTeamsSavePayload = {
+   agents: Record<string, {
+@@ -212,7 +211,6 @@ function AppContent() {
+   const [securityAlertVisible, setSecurityAlertVisible] = useState(false);
+   const [securityAlertContent, setSecurityAlertContent] = useState('');
+   const [hasVisitedSkills, setHasVisitedSkills] = useState(false);
+-  const [hasVisitedChannels, setHasVisitedChannels] = useState(false);
+   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+   const startupUpdateCheckRef = useRef(false);
+   /** 从 SkillNet 等入口跳转配置页时，首次展开对应配置分组（如第三方服务） */
+@@ -1340,7 +1338,6 @@ for (let i = payload.team.length; i < 10; i++) {
+   const handleNavigate = useCallback((nav: MainNavKey) => {
+     setActiveNav(nav);
+     if (nav === 'skills') setHasVisitedSkills(true);
+-    if (nav === 'channels') setHasVisitedChannels(true);
+   }, []);
+ 
+   const handleExportShare = useCallback(async () => {
+@@ -1587,11 +1584,6 @@ for (let i = payload.team.length; i < 10; i++) {
+             />
+           </div>
+         )}
+-        {hasVisitedChannels && (
+-          <div className={`app-section ${activeNav === 'channels' ? '' : 'is-hidden'}`}>
+-            <ChannelsPanel isConnected={isConnected} />
+-          </div>
+-        )}
+         {activeNav === 'extensions' && (
+           <div className="app-section">
+             <ExtensionsHubPanel sessionId={sessionId} isConnected={isConnected} />
+diff --git a/jiuwenswarm/channels/web/frontend/src/components/SessionSidebar/index.tsx b/jiuwenswarm/channels/web/frontend/src/components/SessionSidebar/index.tsx
+index 7f703f3..54b1762 100644
+--- a/jiuwenswarm/channels/web/frontend/src/components/SessionSidebar/index.tsx
++++ b/jiuwenswarm/channels/web/frontend/src/components/SessionSidebar/index.tsx
+@@ -15,7 +15,6 @@ import sessionIcon from '../../assets/sidebar/session.svg';
+ import heartbeatIcon from '../../assets/sidebar/heartbeat.svg';
+ import cronIcon from '../../assets/sidebar/cron.svg';
+ import skillIcon from '../../assets/sidebar/skill.svg';
+-import channelIcon from '../../assets/sidebar/channel.svg';
+ import pluginIcon from '../../assets/sidebar/plugin.svg';
+ import configIcon from '../../assets/sidebar/config.svg';
+ import webIcon from '../../assets/sidebar/web.svg';
+@@ -30,7 +29,7 @@ import appearanceDarkIcon from '../../assets/sidebar/appearance-dark.svg';
+ import appearanceLightIcon from '../../assets/sidebar/appearance-light.svg';
+ import { webRequest } from '../../services/webClient';
+ 
+-type MainNavKey = 'chat' | 'skills' | 'agents' | 'teams' | 'sessions' | 'heartbeat' | 'cron' | 'channels' | 'extensions' | 'configpanel' | 'logspanel' | 'browserpanel' | 'updatepanel';
++type MainNavKey = 'chat' | 'skills' | 'agents' | 'teams' | 'sessions' | 'heartbeat' | 'cron' | 'extensions' | 'configpanel' | 'logspanel' | 'browserpanel' | 'updatepanel';
+ 
+ interface SessionSidebarProps {
+   activeNav: MainNavKey;
+@@ -66,6 +65,5 @@ const mainNavItems: NavItem[] = [
+   { key: 'heartbeat', labelKey: 'nav.heartbeat', icon: <img src={heartbeatIcon} alt="" /> },
+   { key: 'cron', labelKey: 'nav.cron', icon: <img src={cronIcon} alt="" /> },
+   { key: 'skills', labelKey: 'nav.skills', icon: <img src={skillIcon} alt="" /> },
+-  { key: 'channels', labelKey: 'nav.channels', icon: <img src={channelIcon} alt="" /> },
+   { key: 'extensions', labelKey: 'nav.extensions', icon: <img src={pluginIcon} alt="" /> },
+ ];
+diff --git a/jiuwenswarm/symphony/llm.py b/jiuwenswarm/symphony/llm.py
+index ba8ef3a..596fa79 100644
+--- a/jiuwenswarm/symphony/llm.py
++++ b/jiuwenswarm/symphony/llm.py
+@@ -387,7 +387,7 @@ def extract_message_content(message: Any) -> str:
+     """Extract text from common openjiuwen/OpenAI-compatible response shapes."""
+ 
+     content = getattr(message, "content", None)
+-    if isinstance(content, str):
++    if isinstance(content, str) and content.strip():
+         return content.strip()
+     if isinstance(content, list):
+         return "".join(_content_part_text(item) for item in content).strip()
+@@ -399,7 +399,9 @@ def extract_message_content(message: Any) -> str:
+         if choice_message is not None:
+             return extract_message_content(choice_message)
+ 
+-    for attr in ("parsed", "json", "output_text", "text"):
++    # DeepSeek reasoning models may return the complete structured answer in
++    # reasoning_content while leaving content empty.
++    for attr in ("reasoning_content", "parsed", "json", "output_text", "text"):
+         value = getattr(message, attr, None)
+         if isinstance(value, str) and value.strip():
+             return value.strip()
+@@ -407,7 +409,7 @@ def extract_message_content(message: Any) -> str:
+             return json.dumps(value, ensure_ascii=False)
+ 
+     if isinstance(message, dict):
+-        for key in ("content", "output_text", "text"):
++        for key in ("content", "reasoning_content", "output_text", "text"):
+             value = message.get(key)
+             if isinstance(value, str) and value.strip():
+                 return value.strip()

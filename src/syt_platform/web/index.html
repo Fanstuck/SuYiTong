@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="速易通科研论文自动化中台">
+  <title>速易通 · 科研工作台</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20260816-formal-benchmark-v2">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span>速</span></div>
+        <div><strong>速易通</strong><small>科研智能中台</small></div>
+      </div>
+
+      <nav class="nav" aria-label="主导航">
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">⌂</span><span>工作台</span></button>
+        <button class="nav-item" data-view="projects"><span class="nav-icon">◇</span><span>论文项目</span></button>
+        <button class="nav-item" data-view="environment"><span class="nav-icon">⌘</span><span>环境配置</span></button>
+        <button class="nav-item" data-view="api"><span class="nav-icon">{ }</span><span>接口能力</span></button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="runtime-state"><span class="pulse" id="sidebarPulse"></span><div><strong id="sidebarStatus">正在检测</strong><small>JiuwenSwarm Runtime</small></div></div>
+        <a class="ghost-link" href="http://127.0.0.1:5173" target="_blank" rel="noreferrer">打开原生控制台 ↗</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="展开菜单">☰</button>
+        <div><p class="eyebrow">SUYITONG RESEARCH OS</p><h1 id="pageTitle">科研工作台</h1></div>
+        <div class="top-actions">
+          <span class="sync-time" id="syncTime">等待同步</span>
+          <button class="icon-button" id="refreshButton" title="刷新数据" aria-label="刷新数据">↻</button>
+          <button class="primary compact" data-go="projects">＋ 新建论文</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="view active" id="view-dashboard">
+          <article class="hero">
+            <div class="hero-copy">
+              <span class="pill light">JiuwenSwarm 驱动</span>
+              <h2>把科研想法，推进为<br><em>可验证的完整论文</em></h2>
+              <p>从选题拆解、文献调研、方法设计到质量审查，以清晰的阶段门管理每一次智能体协作。</p>
+              <div class="hero-actions"><button class="primary inverse" data-go="projects">创建研究项目</button><button class="text-button" data-go="environment">配置模型环境 →</button></div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+              <div class="paper-stack"><span></span><span></span><div><b>ICLR</b><small>SHORT PAPER</small><i></i><i></i><i></i><i></i></div></div>
+              <div class="agent-chip chip-one">文献智能体</div><div class="agent-chip chip-two">质量门</div><div class="agent-chip chip-three">方法设计</div>
+            </div>
+          </article>
+
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-icon mint">◎</div><div><span>中台 API</span><strong id="metricApi">检测中</strong><small id="metricApiSub">127.0.0.1:8000</small></div></article>
+            <article class="metric-card"><div class="metric-icon blue">⌁</div><div><span>JiuwenSwarm</span><strong id="metricSwarm">检测中</strong><small id="metricSwarmSub">0 / 4 服务在线</small></div></article>
+            <article class="metric-card"><div class="metric-icon amber">✦</div><div><span>第三方模型</span><strong id="metricModel">未配置</strong><small id="metricModelSub">OpenAI 兼容接口</small></div></article>
+            <article class="metric-card"><div class="metric-icon violet">▤</div><div><span>论文项目</span><strong id="metricProjects">0 个</strong><small id="metricProjectSub">等待创建首个项目</small></div></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel workflow-panel">
+              <div class="panel-head"><div><span class="section-kicker">RESEARCH PIPELINE</span><h3>论文全流程</h3></div><span class="mode-tag">8 个质量阶段</span></div>
+              <div class="workflow" id="workflowOverview"></div>
+              <div class="workflow-note"><span>半流程模式</span>在关键质量门等待人工确认；全流程模式按规则连续推进。</div>
+            </article>
+            <article class="panel services-panel">
+              <div class="panel-head"><div><span class="section-kicker">RUNTIME</span><h3>服务状态</h3></div><button class="small-button" id="serviceRefresh">重新检测</button></div>
+              <div id="serviceList" class="service-list"></div>
+              <div class="service-foot"><span>轻量模式</span><strong id="liteMode">—</strong></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-projects">
+          <div class="section-heading"><div><span class="section-kicker">RESEARCH PROJECTS</span><h2>论文项目</h2><p>建立研究任务，并按照质量门逐步推进。</p></div><button class="primary" id="toggleCreate">＋ 创建新项目</button></div>
+
+          <article class="panel create-panel" id="createPanel">
+            <div class="form-intro"><span>01</span><div><h3>定义研究任务</h3><p>先给出清晰的题目意图和 Agent 技术方向，后续智能体将据此建立研究计划。</p></div></div>
+            <form id="projectForm" class="project-form">
+              <label class="field wide"><span>暂定论文题目</span><input name="title" required minlength="3" maxlength="200" placeholder="例如：面向长上下文任务的分层记忆检索方法"></label>
+              <label class="field"><span>研究方向</span><input name="research_direction" required minlength="2" maxlength="100" placeholder="手动输入，例如：Agent 记忆引擎设计"></label>
+              <fieldset class="field mode-field"><legend>执行模式</legend><label class="radio-card"><input type="radio" name="mode" value="semi" checked><span><b>半流程</b><small>关键节点人工确认</small></span></label><label class="radio-card"><input type="radio" name="mode" value="full"><span><b>全流程</b><small>按规则自动推进</small></span></label></fieldset>
+              <div class="form-actions"><button type="button" class="secondary" id="cancelCreate">取消</button><button type="submit" class="primary">创建并进入需求澄清</button></div>
+            </form>
+          </article>
+
+          <div class="project-layout">
+            <article class="panel project-list-panel">
+              <div class="panel-head"><div><h3>全部项目</h3><p id="projectCountLabel">共 0 个项目</p></div><div class="filter-chip">最近更新</div></div>
+              <div id="projectList" class="project-list"><div class="empty-state"><span>◇</span><h4>还没有论文项目</h4><p>创建第一个研究任务，开始搭建论文流程。</p></div></div>
+            </article>
+            <article class="panel project-detail" id="projectDetail">
+              <div class="empty-detail"><span>↖</span><h3>选择一个项目</h3><p>这里会展示当前阶段、完整流程和下一步动作。</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-environment">
+          <div class="section-heading"><div><span class="section-kicker">ENVIRONMENT</span><h2>环境配置</h2><p>配置第三方模型与检索服务，不依赖本地推理算力。</p></div><span class="security-note">● 密钥仅保存在本机</span></div>
+
+          <div class="config-layout">
+            <form id="environmentForm" class="panel config-form">
+              <div class="config-section">
+                <div class="number-title"><span>01</span><div><h3>主推理模型</h3><p>用于选题、方法设计、论文撰写与审阅智能体。</p></div><span class="config-badge" id="modelConfigBadge">未配置</span></div>
+                <div class="form-grid">
+                  <label class="field"><span>服务提供商</span><select name="model_provider"><option>OpenAI</option><option>DeepSeek</option><option>SiliconFlow</option><option>DashScope</option><option>OpenRouter</option><option>自定义兼容服务</option></select></label>
+                  <label class="field"><span>模型名称</span><input name="model_name" placeholder="例如：deepseek-chat"></label>
+                  <label class="field wide"><span>API Base URL</span><input name="api_base" type="url" placeholder="https://api.example.com/v1"><small>不包含 /chat/completions 后缀</small></label>
+                  <label class="field wide"><span>API Key <i id="apiKeyState"></i></span><div class="secret-input"><input name="api_key" type="password" autocomplete="new-password" placeholder="留空则保留已保存的密钥"><button type="button" class="reveal" data-reveal="api_key">显示</button></div></label>
+                  <label class="field wide"><span>自定义请求头（可选）</span><input name="custom_headers" placeholder='例如：{"X-Project":"suyitong"}'></label>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="number-title"><span>02</span><div><h3>OpenAlex 学术检索</h3><p>用于获取论文题录、DOI、作者、摘要与来源记录；保存后立即用于下一次文献调研。</p></div><span class="config-badge" id="openAlexConfigBadge">未配置</span></div>
+                <div class="source-config-card">
+                  <div class="source-config-head"><div class="source-mark">OA</div><div><b>OpenAlex Works API</b><small>认证请求通过 Bearer Header 发送，密钥不会进入 URL 或浏览器存储。</small></div></div>
+                  <div class="form-grid">
+                    <label class="field wide"><span>OpenAlex API Key <i id="openAlexKeyState"></i></span><div class="secret-input"><input name="openalex_api_key" type="password" autocomplete="new-password" placeholder="留空则保留已保存的密钥"><button type="button" class="reveal" data-reveal="openalex_api_key">显示</button></div></label>
+                  </div>
+                  <div class="source-test-row"><span id="openAlexConnectionDetail">保存密钥后可检测认证检索与剩余额度</span><button type="button" class="secondary" id="testOpenAlex">检测 OpenAlex</button></div>
+                </div>
+              </div>
+
+              <div class="config-section">
+                <div class="number-title"><span>03</span><div><h3>其他向量与联网检索</h3><p>可选能力；用于语义记忆、网页补充检索与扩展研究来源。</p></div></div>
+                <details>
+                  <summary>展开其他可选配置 <span>Embedding · Jina · Serper · Perplexity</span></summary>
+                  <div class="form-grid details-grid">
+                    <label class="field"><span>Embedding API Base</span><input name="embed_api_base" type="url" placeholder="https://api.example.com/v1"></label>
+                    <label class="field"><span>Embedding 模型</span><input name="embed_model" placeholder="text-embedding-model"></label>
+                    <label class="field wide"><span>Embedding API Key <i id="embedKeyState"></i></span><input name="embed_api_key" type="password" autocomplete="new-password" placeholder="留空则保留"></label>
+                    <div class="connection-detail wide"><span>Embedding 状态</span><p id="embeddingConnectionDetail">完成 Base、模型与 Key 后启用真实检索</p></div>
+                    <label class="field"><span>Jina API Key <i id="jinaKeyState"></i></span><input name="jina_api_key" type="password" autocomplete="new-password" placeholder="留空则保留"></label>
+                    <label class="field"><span>Serper API Key <i id="serperKeyState"></i></span><input name="serper_api_key" type="password" autocomplete="new-password" placeholder="留空则保留"></label>
+                    <label class="field wide"><span>Perplexity API Key <i id="perplexityKeyState"></i></span><input name="perplexity_api_key" type="password" autocomplete="new-password" placeholder="留空则保留"></label>
+                  </div>
+                </details>
+              </div>
+              <div class="sticky-actions"><span id="configSaveHint">OpenAlex 与 Embedding 保存后立即生效；推理模型变更需重启 JiuwenSwarm</span><div><button type="button" class="secondary" id="testEmbedding">检测 Embedding</button><button type="button" class="secondary" id="testModel">检测模型</button><button type="submit" class="primary">保存环境配置</button></div></div>
+            </form>
+
+            <aside class="config-aside">
+              <article class="panel guidance-card"><div class="aside-icon">✓</div><h3>配置检查清单</h3><ul><li><span id="checkBase">○</span>API 地址已填写</li><li><span id="checkKey">○</span>推理密钥已保存</li><li><span id="checkModel">○</span>模型名称已填写</li><li><span id="checkConnection">○</span>模型服务连接可用</li><li><span id="checkEmbedding">○</span>Embedding 参数已配置</li><li><span id="checkEmbeddingConnection">○</span>Embedding 向量服务可用</li><li><span id="checkOpenAlexKey">○</span>OpenAlex 密钥已保存</li><li><span id="checkOpenAlexConnection">○</span>OpenAlex 认证检索可用</li><li><span id="checkRuntime">○</span>JiuwenSwarm 已初始化</li></ul></article>
+              <article class="panel privacy-card"><span>LOCAL FIRST</span><h3>本机安全边界</h3><p>密钥不会通过查询接口返回，也不会写入浏览器存储。管理 API 仅监听本机回环地址。</p></article>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-api">
+          <div class="section-heading"><div><span class="section-kicker">API CAPABILITIES</span><h2>接口能力</h2><p>浏览速易通中台当前已经开放的业务能力。</p></div><a class="primary link-button" href="/docs" target="_blank">打开 Swagger ↗</a></div>
+          <div class="api-layout">
+            <article class="panel endpoint-panel"><div class="panel-head"><div><h3>REST API</h3><p>Base URL · http://127.0.0.1:8000</p></div><span class="live-tag"><i></i> LIVE</span></div><div id="endpointList" class="endpoint-list"></div></article>
+            <aside class="panel response-panel"><div class="code-head"><span>实时能力响应</span><button id="copyResponse">复制</button></div><pre id="capabilityJson">正在读取...</pre><div class="response-foot"><button class="secondary full" id="runCapability">▶ 重新请求能力接口</button></div></aside>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <script src="/static/app.js?v=20260816-formal-benchmark-v2" defer></script>
+</body>
+</html>
