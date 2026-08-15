@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "suyitong-platform"
+version = "0.1.0"
+description = "速易通科研论文自动化中台"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "certifi>=2024.0",
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "pydantic>=2.0",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.3",
+]
+
+[project.scripts]
+suyitong-api = "syt_platform.api.main:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"syt_platform" = ["web/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --basetemp=.cache/pytest"

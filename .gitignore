@@ -1,0 +1,30 @@
+.venv/
+.cache/
+.codex-tmp/
+runtime/
+logs/
+vendor/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite
+*.sqlite3
+*.jsonl
+*.log
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.env.local
+config/jiuwenswarm.env
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Upstream JiuwenSwarm is cloned by scripts/setup.ps1; only the pinned patch is committed.
